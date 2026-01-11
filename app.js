@@ -152,7 +152,7 @@ function checkMatch() {
     const card1 = deck[id1];
     const card2 = deck[id2];
 
-    const isMatch = (card1.rank === card2.rank) && (card1.color === card2.color);
+    const isMatch = (card1.rank === card2.rank);
 
     if (isMatch) {
         gameState.foundPairs.push(id1, id2);
