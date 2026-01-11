@@ -1,4 +1,4 @@
-// カードデータの生成（52枚）
+// --- カード定義などは変更なし ---
 const suits = [
     { mark: '♠', color: 'black', name: 'spade' },
     { mark: '♣', color: 'black', name: 'club' },
@@ -22,29 +22,67 @@ suits.forEach(suit => {
 });
 
 let gameState = {
-    foundPairs: [],   // ペア成立済みのカードID
-    flippedCards: []  // 現在めくっているカードID
+    foundPairs: [],
+    flippedCards: []
 };
 
 const STORAGE_KEY = 'walkingTrumpGame_52';
 let html5QrCode; 
 
-// 初期化
+// ★追加: ダイアログを表示するかどうかの設定
+let isMessageEnabled = true; 
+
 function init() {
     loadState();
     
-    // URLパラメータのチェック
+    // 設定読み込み（オプション）
+    const savedSetting = localStorage.getItem('msgSetting');
+    if (savedSetting !== null) {
+        isMessageEnabled = (savedSetting === 'true');
+    }
+    updateToggleButton();
+
     const urlParams = new URLSearchParams(window.location.search);
     const scannedId = urlParams.get('id');
     if (scannedId !== null) {
         handleScan(parseInt(scannedId));
         window.history.replaceState({}, document.title, window.location.pathname);
     }
-
     renderGrid();
 }
 
-// --- スキャナー処理 ---
+// --- ダイアログ表示機能（Alertの代わり） ---
+// メッセージを表示し、2.5秒後に自動で消す
+function showMessage(text) {
+    // 設定がOFFなら何もしない
+    if (!isMessageEnabled) return;
+
+    const overlay = document.getElementById('custom-dialog');
+    const content = document.getElementById('dialog-content');
+    
+    content.textContent = text;
+    overlay.classList.add('show');
+
+    // 2.5秒後に消す
+    setTimeout(() => {
+        overlay.classList.remove('show');
+    }, 2500);
+}
+
+// --- ボタン切替機能 ---
+const toggleBtn = document.getElementById('toggle-msg-btn');
+toggleBtn.addEventListener('click', () => {
+    isMessageEnabled = !isMessageEnabled; // 反転
+    localStorage.setItem('msgSetting', isMessageEnabled); // 保存
+    updateToggleButton();
+});
+
+function updateToggleButton() {
+    toggleBtn.textContent = isMessageEnabled ? "💬 表示: ON" : "💬 表示: OFF";
+    toggleBtn.style.background = isMessageEnabled ? "#17a2b8" : "#6c757d";
+}
+
+// --- スキャナー処理（変更なし） ---
 document.getElementById('scan-btn').addEventListener('click', startScanner);
 document.getElementById('close-scan-btn').addEventListener('click', stopScanner);
 
@@ -58,7 +96,7 @@ function startScanner() {
     
     html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
     .catch(err => {
-        alert("カメラ起動エラー: " + err);
+        showMessage("カメラ起動エラー: " + err); // alert変更
     });
 }
 
@@ -84,81 +122,73 @@ function onScanSuccess(decodedText, decodedResult) {
         if (idVal !== null) {
             handleScan(parseInt(idVal));
         } else {
-            alert("無効なQRコードです");
+            showMessage("無効なQRコードです"); // alert変更
         }
     } catch (e) {
-        alert("読み取りエラー");
+        showMessage("読み取りエラー"); // alert変更
     }
 }
 
-// --- ▼▼▼ ここが修正したhandleScan関数です ▼▼▼ ---
+// --- ゲームロジック ---
+
 function handleScan(index) {
     if (index < 0 || index >= deck.length) {
-        alert("無効なカードIDです");
+        showMessage("無効なカードIDです"); // alert変更
         return;
     }
     
-    // 獲得済みチェック
     if (gameState.foundPairs.includes(index)) {
-        alert(`【${deck[index].displayName}】\n獲得済みです`);
+        showMessage(`【${deck[index].displayName}】\n獲得済みです`); // alert変更
         return;
     }
 
-    // ★重要変更点★
-    // 「既にめくっているか」のチェックの前に、
-    // 「前のターンが終わっているか（2枚めくられたままか）」をチェックしてリセットします。
-    // これにより、ハズレた直後のカードをすぐに1枚目としてスキャンできるようになります。
+    // 2枚溜まっていたらリセット（前回の修正適用済み）
     if (gameState.flippedCards.length === 2) {
-        gameState.flippedCards = []; // 前の2枚を閉じる（記憶から消す）
-        renderGrid(); // 画面上も閉じる
+        gameState.flippedCards = [];
+        renderGrid();
     }
 
-    // ここでチェックすれば、「今のターンで同じカードを2回スキャンした」場合のみ弾かれます
     if (gameState.flippedCards.includes(index)) {
-        alert(`【${deck[index].displayName}】\n既にめくっています（2枚目を探してください）`);
+        showMessage(`【${deck[index].displayName}】\n既にめくっています`); // alert変更
         return;
     }
 
-    // カードをめくる処理
     gameState.flippedCards.push(index);
     saveState();
     renderGrid();
 
-    // メッセージ表示
+    // ステータス更新
     const card = deck[index];
     document.getElementById('status-text').textContent = `出たカード: ${card.displayName}`;
     
-    // 2枚目なら判定
+    // 判定
     if (gameState.flippedCards.length === 2) {
+        // 少し待ってから判定（カードが開くアニメーションを見せるため）
         setTimeout(checkMatch, 500);
     } else {
-        setTimeout(() => alert(`1枚目: ${card.displayName}\n次のカードを探してください！`), 100);
+        // 1枚目のときは少し短めにメッセージ
+        showMessage(`1枚目: ${card.displayName}\n次のカードを探してください！`); 
     }
 }
-// --- ▲▲▲ 修正ここまで ▲▲▲ ---
 
-
-// ペア判定
 function checkMatch() {
     const [id1, id2] = gameState.flippedCards;
     const card1 = deck[id1];
     const card2 = deck[id2];
 
-    // 色は関係なく、数字(rank)が同じなら正解とする
     const isMatch = (card1.rank === card2.rank);
 
     if (isMatch) {
         gameState.foundPairs.push(id1, id2);
         gameState.flippedCards = []; 
-        alert(`🎉 ペア成立！\n${card1.displayName} と ${card2.displayName}`);
+        showMessage(`🎉 ペア成立！\n${card1.displayName} と ${card2.displayName}`); // alert変更
     } else {
-        alert(`😢 残念、ハズレ！\n${card1.displayName} と ${card2.displayName}\n（次は1枚目からやり直しです）`);
+        showMessage(`😢 残念、ハズレ！\n${card1.displayName} と ${card2.displayName}`); // alert変更
     }
     saveState();
     renderGrid();
 }
 
-// 描画
 function renderGrid() {
     const grid = document.getElementById('card-grid');
     grid.innerHTML = '';
@@ -185,6 +215,7 @@ function renderGrid() {
 
     if (gameState.foundPairs.length === deck.length) {
         document.getElementById('status-text').textContent = "🎊 全制覇！おめでとう！ 🎊";
+        showMessage("🎊 全制覇！おめでとうございます！ 🎊"); // alert変更
     }
 }
 
@@ -204,7 +235,7 @@ document.getElementById('reset-btn').addEventListener('click', () => {
         localStorage.removeItem(STORAGE_KEY);
         gameState = { foundPairs: [], flippedCards: [] };
         renderGrid();
-        document.getElementById('status-text').textContent = "リセットしました";
+        showMessage("リセットしました"); // alert変更
     }
 });
 
