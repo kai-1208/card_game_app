@@ -1,7 +1,4 @@
-// カードデータの生成（52枚）
-// ペアの定義：同じ数字(Rank) かつ 同じ色(Color)
-// 黒: スペード(♠), クラブ(♣)
-// 赤: ハート(♥), ダイヤ(♦)
+// --- カードデータ生成などは前回と同じ ---
 const suits = [
     { mark: '♠', color: 'black', name: 'spade' },
     { mark: '♣', color: 'black', name: 'club' },
@@ -11,8 +8,6 @@ const suits = [
 const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
 let deck = [];
-
-// デッキ生成（ID: 0〜51）
 let idCounter = 0;
 suits.forEach(suit => {
     ranks.forEach(rank => {
@@ -26,86 +21,150 @@ suits.forEach(suit => {
     });
 });
 
-// ゲーム状態
 let gameState = {
-    foundPairs: [],   // ペア成立済みのカードID
-    flippedCards: []  // 現在めくっているカードID
+    foundPairs: [],
+    flippedCards: []
 };
-
 const STORAGE_KEY = 'walkingTrumpGame_52';
+let html5QrCode; // スキャナーのインスタンス
 
 // 初期化
 function init() {
     loadState();
     
-    // URLパラメータの確認 (?id=XX)
+    // 通常のURLアクセス（QRを使わず直接URLを叩いた場合）も一応サポート
     const urlParams = new URLSearchParams(window.location.search);
     const scannedId = urlParams.get('id');
-
     if (scannedId !== null) {
         handleScan(parseInt(scannedId));
+        // URLパラメータを消す
+        window.history.replaceState({}, document.title, window.location.pathname);
     }
 
     renderGrid();
 }
 
-// スキャン処理
+// --- スキャナー関連の処理 ---
+
+// スキャンボタン
+document.getElementById('scan-btn').addEventListener('click', startScanner);
+document.getElementById('close-scan-btn').addEventListener('click', stopScanner);
+
+function startScanner() {
+    const container = document.getElementById('reader-container');
+    const closeBtn = document.getElementById('close-scan-btn');
+    container.style.display = 'block';
+    closeBtn.style.display = 'inline-block';
+
+    html5QrCode = new Html5Qrcode("reader");
+
+    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+    
+    // 背面カメラ(environment)を使用
+    html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
+    .catch(err => {
+        alert("カメラの起動に失敗しました。\nブラウザの権限設定を確認してください。");
+        console.error(err);
+    });
+}
+
+function stopScanner() {
+    if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+            document.getElementById('reader-container').style.display = 'none';
+            html5QrCode.clear();
+        }).catch(err => console.error(err));
+    }
+}
+
+// QR読み取り成功時のコールバック
+function onScanSuccess(decodedText, decodedResult) {
+    // 連続読み取りを防ぐため一旦ストップ
+    stopScanner();
+
+    // 読み取った内容はURL全体（例: https://.../?id=5）になっている
+    // ここから「id=数字」の部分を取り出す
+    try {
+        let idVal = null;
+
+        // URL形式かチェック
+        if (decodedText.includes('?')) {
+            const urlObj = new URL(decodedText);
+            idVal = urlObj.searchParams.get('id');
+        } 
+        
+        // もしURLじゃなくて数字だけ入っているQRコードなら直接解釈
+        if (!idVal && !isNaN(decodedText)) {
+            idVal = decodedText;
+        }
+
+        if (idVal !== null) {
+            handleScan(parseInt(idVal));
+        } else {
+            alert("このQRコードはゲーム用ではありません");
+        }
+
+    } catch (e) {
+        alert("読み取りエラー: " + e);
+    }
+}
+
+
+// --- ゲームロジック ---
+
 function handleScan(index) {
     if (index < 0 || index >= deck.length) {
-        alert("無効なQRコードです");
+        alert("無効なカードIDです");
         return;
     }
     if (gameState.foundPairs.includes(index)) {
-        alert("このカードは既に獲得済みです！");
+        alert(`【${deck[index].displayName}】\nこのカードは既に獲得済みです！`);
         return;
     }
     if (gameState.flippedCards.includes(index)) {
-        alert("このカードは既にめくっています");
+        alert(`【${deck[index].displayName}】\nこのカードは既にめくっています`);
         return;
     }
 
-    // 既に2枚めくられていてハズレだった場合、リセットして新しい1枚目とする
+    // 2枚めくり終わった後の3枚目ならリセット
     if (gameState.flippedCards.length === 2) {
         gameState.flippedCards = [];
     }
 
     gameState.flippedCards.push(index);
     saveState();
+    renderGrid();
 
+    // メッセージ表示
+    const card = deck[index];
+    document.getElementById('status-text').textContent = `出たカード: ${card.displayName}`;
+    
     // 2枚目なら判定
     if (gameState.flippedCards.length === 2) {
-        setTimeout(checkMatch, 300); // 描画後に判定
+        setTimeout(checkMatch, 500); // 少し待ってから判定
     } else {
-        alert(`1枚目: ${deck[index].displayName}\n次のカードを探してください！`);
+        setTimeout(() => alert(`1枚目: ${card.displayName}\n次のカードを探してください！`), 100);
     }
-
-    // URLパラメータ削除（リロード対策）
-    window.history.replaceState({}, document.title, window.location.pathname);
 }
 
-// ペア判定
 function checkMatch() {
     const [id1, id2] = gameState.flippedCards;
     const card1 = deck[id1];
     const card2 = deck[id2];
 
-    // 判定ルール: 同じ数字(rank) かつ 同じ色(color) ならペア
-    // 例: スペードA と クラブA はペア。スペードA と ハートA はハズレ。
     const isMatch = (card1.rank === card2.rank) && (card1.color === card2.color);
 
     if (isMatch) {
         gameState.foundPairs.push(id1, id2);
-        gameState.flippedCards = [];
+        gameState.flippedCards = []; // クリア
         alert(`🎉 ペア成立！\n${card1.displayName} と ${card2.displayName}`);
     } else {
         alert(`😢 残念、ハズレ！\n${card1.displayName} と ${card2.displayName}\n（次は1枚目からやり直しです）`);
-        // ハズレの場合、画面上は開いたままにするが、次のスキャンでリセットされる
     }
     saveState();
     renderGrid();
 }
 
-// 描画
 function renderGrid() {
     const grid = document.getElementById('card-grid');
     grid.innerHTML = '';
@@ -119,7 +178,7 @@ function renderGrid() {
 
         if (isOpen) {
             div.classList.add('open');
-            div.classList.add(card.color); // red or black
+            div.classList.add(card.color);
             div.textContent = card.displayName;
         }
 
@@ -130,7 +189,6 @@ function renderGrid() {
         grid.appendChild(div);
     });
 
-    // 完了判定
     if (gameState.foundPairs.length === deck.length) {
         document.getElementById('status-text').textContent = "🎊 全制覇！おめでとう！ 🎊";
     }
@@ -153,7 +211,7 @@ document.getElementById('reset-btn').addEventListener('click', () => {
         localStorage.removeItem(STORAGE_KEY);
         gameState = { foundPairs: [], flippedCards: [] };
         renderGrid();
-        alert("リセットしました");
+        document.getElementById('status-text').textContent = "リセットしました";
     }
 });
 

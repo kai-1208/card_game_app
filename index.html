@@ -3,20 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>リアル宝探し神経衰弱 (52枚版)</title>
+    <title>リアル宝探し神経衰弱 (カメラ付き)</title>
     <link rel="stylesheet" href="style.css">
+    <!-- QRコード読み取りライブラリ -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body>
 
     <header>
         <h1>🏃 ウォーキング神経衰弱 🃏</h1>
-        <div class="status-box">
-            <p id="status-text">QRコードをスキャンしてください</p>
-            <button id="reset-btn" class="btn">リセット</button>
+        <div class="control-box">
+            <!-- カメラ起動ボタン -->
+            <button id="scan-btn" class="btn scan-btn">📸 QRをスキャン</button>
+            <button id="reset-btn" class="btn reset-btn">リセット</button>
         </div>
     </header>
 
     <main>
+        <!-- カメラ映像が表示されるエリア（最初は隠れています） -->
+        <div id="reader-container">
+            <div id="reader"></div>
+            <button id="close-scan-btn" class="btn" style="display:none; margin-top:10px;">カメラを閉じる</button>
+        </div>
+
+        <!-- ステータス表示 -->
+        <p id="status-text">「QRをスキャン」ボタンを押して探そう！</p>
+
         <!-- カード一覧グリッド -->
         <div id="card-grid" class="grid"></div>
     </main>
