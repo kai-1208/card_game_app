@@ -3,40 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>リアル宝探し神経衰弱</title>
+    <title>体を動かして読み取れ！神経衰弱</title>
     <link rel="stylesheet" href="style.css">
+    <!-- QRコード読み取りライブラリ -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body>
 
-    <header>
-        <h1>🏃 ウォーキング神経衰弱 🃏</h1>
-        <div class="control-box">
-            <button id="scan-btn" class="btn scan-btn">📸 QRをスキャン</button>
-            <!-- ▼ 追加: ダイアログ表示切替ボタン -->
-            <button id="toggle-msg-btn" class="btn toggle-btn">💬 表示: ON</button>
-            <button id="reset-btn" class="btn reset-btn">リセット</button>
+    <!-- 背景画像 -->
+    <div class="background" id="bg-img"></div>
+
+    <div class="container">
+        
+        <!-- シーン1：タイトル画面 -->
+        <div id="title-screen" onclick="showMenu()">
+            <div class="title-area">
+                <span class="title-small">体を動かして読み取れ！</span>
+                <span class="title-ruby">しんけいすいじゃく</span>
+                <h1 class="title-large" id="main-title">神経衰弱</h1>
+                <p class="tap-to-start" id="start-msg">クリックしてスタート</p>
+            </div>
         </div>
-    </header>
 
-    <main>
-        <div id="reader-container">
-            <div id="reader"></div>
-            <button id="close-scan-btn" class="btn" style="display:none; margin-top:10px;">カメラを閉じる</button>
+        <!-- シーン2：メニュー画面 -->
+        <div id="menu-screen" class="hidden">
+            <div class="menu-buttons">
+                <!-- onclickを直接 startGame() に変更しています -->
+                <button class="btn btn-start" onclick="startGame()">ゲーム開始</button>
+                <button class="btn btn-rules" onclick="openModal('rules')">ルール説明</button>
+                <button class="btn btn-settings" onclick="openModal('settings')">設定</button>
+            </div>
         </div>
 
-        <p id="status-text">「QRをスキャン」ボタンを押して探そう！</p>
+        <!-- シーン3：ゲーム画面（統合部分） -->
+        <div id="game-screen" class="hidden">
+            <header class="game-header">
+                <div class="control-box">
+                    <button id="scan-btn" class="btn-game scan-btn">📸 スキャン</button>
+                    <button id="toggle-msg-btn" class="btn-game toggle-btn">💬 ダイアログ表示: ON</button>
+                    <button id="reset-btn" class="btn-game reset-btn">リセット</button>
+                    <button onclick="backToTitle()" class="btn-game back-btn">戻る</button>
+                </div>
+            </header>
 
-        <div id="card-grid" class="grid"></div>
-    </main>
+            <div class="game-content">
+                <!-- カメラエリア -->
+                <div id="reader-container">
+                    <div id="reader"></div>
+                    <button id="close-scan-btn" class="btn-game close-btn" style="display:none;">カメラを閉じる</button>
+                </div>
 
-    <!-- ▼ 追加: カスタムダイアログ（ボタンなし） -->
-    <div id="custom-dialog" class="dialog-overlay">
-        <div id="dialog-content" class="dialog-box">
-            <!-- ここにメッセージが入ります -->
+                <p id="status-text">「スキャン」ボタンでQRコードを読み取ろう！</p>
+
+                <!-- カード一覧 -->
+                <div id="card-grid" class="grid"></div>
+            </div>
         </div>
+
+        <!-- モーダル（ルール・設定など） -->
+        <div id="info-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2 id="modal-title">タイトル</h2>
+                <div id="modal-body">コンテンツ</div>
+                <button class="btn-close" onclick="closeModal()">閉じる</button>
+            </div>
+        </div>
+
+        <!-- ゲーム内メッセージ用ダイアログ -->
+        <div id="custom-dialog" class="dialog-overlay">
+            <div id="dialog-content" class="dialog-box"></div>
+        </div>
+
     </div>
 
-    <script src="app.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
