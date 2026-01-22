@@ -427,8 +427,16 @@ function handleScan(scannedId) {
 
     if (gameState.flippedCards.length === 2) {
         const [id1, id2] = gameState.flippedCards;
+        
         const card1 = deck.find(c => c.id === id1);
         const card2 = deck.find(c => c.id === id2);
+        
+        if (!card1 || !card2) {
+            console.error('カードが見つかりません！');
+            showMessage("エラーが発生しました");
+            return;
+        }
+        
         if (card1.rank === card2.rank) {
             resultMessage = `🎉 ペア成立！\n${card1.displayName} と ${card2.displayName}`;
         } else {
@@ -463,8 +471,15 @@ function handleScan(scannedId) {
 
 function checkMatch(suppressMessage = false) {
     const [id1, id2] = gameState.flippedCards;
+    
     const card1 = deck.find(c => c.id === id1);
     const card2 = deck.find(c => c.id === id2);
+    
+    if (!card1 || !card2) {
+        console.error('checkMatch: カードが見つかりません');
+        return;
+    }
+    
     const isMatch = (card1.rank === card2.rank);
 
     if (isMatch) {
