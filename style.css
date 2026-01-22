@@ -81,6 +81,7 @@ body, html {
 .btn-start { background-color: #f6cd56; color: #333; }
 .btn-rules { background-color: #6a8dbd; color: white; }
 .btn-settings { background-color: #e6e9e6; color: #333; }
+.btn-qr { background-color: #9b59b6; color: white; }
 
 /* モーダル */
 .modal {

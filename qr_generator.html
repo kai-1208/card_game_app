@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QRコード生成 - 神経衰弱</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            background-color: #2d6b45;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 20px;
+        }
+        h1 { margin-bottom: 20px; }
+        .input-section {
+            background: white;
+            color: #333;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        .input-group {
+            margin: 20px 0;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        select {
+            width: 220px;
+            padding: 12px;
+            font-size: 1.2rem;
+            border: 2px solid #2d6b45;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+        }
+        .card-distribution {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: #333;
+        }
+        .btn {
+            background-color: #f6cd56;
+            color: #333;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+            margin: 10px;
+        }
+        .btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 rgba(0,0,0,0.2);
+        }
+        .btn-secondary {
+            background-color: #6a8dbd;
+            color: white;
+        }
+        .btn-print {
+            background-color: #28a745;
+            color: white;
+        }
+        #qr-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .qr-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        .qr-item canvas {
+            margin: 10px auto;
+            display: block;
+        }
+        .qr-label {
+            color: #333;
+            font-weight: bold;
+            margin-top: 10px;
+            font-size: 1.1rem;
+        }
+        .qr-sub-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        .hidden { display: none; }
+        
+        @media print {
+            body { background: white; }
+            .no-print { display: none !important; }
+            .container { background: white; }
+            #qr-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎴 QRコード生成ツール</h1>
+        
+        <div class="input-section no-print">
+            <div class="input-group">
+                <label for="card-count">生成するカード枚数を選択:</label>
+                <select id="card-count" onchange="updateCardDistribution()">
+                    <option value="10">10枚（5ペア）</option>
+                    <option value="12">12枚（6ペア）</option>
+                    <option value="14">14枚（7ペア）</option>
+                    <option value="16">16枚（8ペア）</option>
+                    <option value="18">18枚（9ペア）</option>
+                    <option value="20">20枚（10ペア）</option>
+                    <option value="22">22枚（11ペア）</option>
+                    <option value="24">24枚（12ペア）</option>
+                    <option value="26">26枚（13ペア）</option>
+                    <option value="28">28枚（14ペア）</option>
+                    <option value="30">30枚（15ペア）</option>
+                    <option value="32">32枚（16ペア）</option>
+                    <option value="34">34枚（17ペア）</option>
+                    <option value="36">36枚（18ペア）</option>
+                    <option value="38">38枚（19ペア）</option>
+                    <option value="40">40枚（20ペア）</option>
+                    <option value="42">42枚（21ペア）</option>
+                    <option value="44">44枚（22ペア）</option>
+                    <option value="46">46枚（23ペア）</option>
+                    <option value="48">48枚（24ペア）</option>
+                    <option value="50">50枚（25ペア）</option>
+                    <option value="52" selected>52枚（26ペア）</option>
+                </select>
+                <div id="card-distribution" class="card-distribution"></div>
+            </div>
+            <button class="btn" onclick="generateQRCodes()">QRコード生成</button>
+            <button class="btn btn-secondary" onclick="location.href='index.html'">ゲームに戻る</button>
+        </div>
+
+        <div id="result-section" class="hidden">
+            <div class="no-print">
+                <h2>✅ 生成完了！</h2>
+                <p>印刷するか、画像として保存してください。</p>
+                <button class="btn btn-print" onclick="window.print()">🖨️ 印刷する</button>
+                <button class="btn btn-secondary" onclick="resetGenerator()">別の枚数で生成</button>
+            </div>
+            <div id="qr-grid"></div>
+        </div>
+    </div>
+
+        <script>
+        const BASE_URL = 'https://kai-1208.github.io/card_game_app/';
+        
+        const suits = [
+            { mark: '♠', name: 'スペード' },
+            { mark: '♣', name: 'クラブ' },
+            { mark: '♥', name: 'ハート' },
+            { mark: '♦', name: 'ダイヤ' }
+        ];
+        const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+        function updateCardDistribution() {
+            const count = parseInt(document.getElementById('card-count').value);
+            const distribution = getCardDistribution(count);
+            
+            let html = '<strong>カード構成:</strong><br>';
+            distribution.forEach(item => {
+                html += `${item.description}<br>`;
+            });
+            
+            document.getElementById('card-distribution').innerHTML = html;
+        }
+
+        function getCardDistribution(totalCards) {
+            const distribution = [];
+            const pairCount = totalCards / 2; // ペア数
+            
+            // 必要なランク数を計算
+            const ranksNeeded = Math.ceil(pairCount / 2);
+            
+            // スートごとの枚数を計算
+            letsuit1Count = Math.ceil(pairCount / 2);
+            let suit2Count = Math.floor(pairCount / 2);
+            
+            // 最初のスート
+            if (suit1Count <= 13) {
+                const endRank = ranks[suit1Count - 1];
+                distribution.push({
+                    description: `${suits[0].mark} ${suits[0].name}: A〜${endRank}（${suit1Count}枚）`
+                });
+            }
+            
+            // 2番目のスート
+            if (suit2Count > 0 && suit2Count <= 13) {
+                const endRank = ranks[suit2Count - 1];
+                distribution.push({
+                    description: `${suits[1].mark} ${suits[1].name}: A〜${endRank}（${suit2Count}枚）`
+                });
+            }
+            
+            // 3番目のスート（26ペア以上の場合）
+            if (pairCount > 13) {
+                const suit3Count = Math.min(13, pairCount - 13);
+                const endRank = ranks[suit3Count - 1];
+                distribution.push({
+                    description: `${suits[2].mark} ${suits[2].name}: A〜${endRank}（${suit3Count}枚）`
+                });
+            }
+            
+            // 4番目のスート（39ペア以上の場合、今回は最大26ペアなので不要）
+            if (pairCount > 26) {
+                const suit4Count = Math.min(13, pairCount - 26);
+                const endRank = ranks[suit4Count - 1];
+                distribution.push({
+                    description: `${suits[3].mark} ${suits[3].name}: A〜${endRank}（${suit4Count}枚）`
+                });
+            }
+            
+            distribution.push({
+                description: `<strong>合計: ${totalCards}枚（${pairCount}ペア）</strong>`
+            });
+            
+            return distribution;
+        }
+
+        function generateQRCodes() {
+            const count = parseInt(document.getElementById('card-count').value);
+            const pairCount = count / 2;
+            
+            const grid = document.getElementById('qr-grid');
+            grid.innerHTML = '';
+            
+            // ペアごとにQRコードを生成
+            for (let rankIndex = 0; rankIndex < 13 && rankIndex < pairCount; rankIndex++) {
+                const rank = ranks[rankIndex];
+                
+                // 1枚目（スペード）
+                const suit1 = suits[0];
+                const id1 = 0 * 13 + rankIndex; // スペードのID
+                const targetUrl1 = `${BASE_URL}?id=${id1}`;
+                createQRItem(grid, targetUrl1, suit1.mark, rank, id1);
+                
+                // 2枚目（クラブ）
+                const suit2 = suits[1];
+                const id2 = 1 * 13 + rankIndex; // クラブのID
+                const targetUrl2 = `${BASE_URL}?id=${id2}`;
+                createQRItem(grid, targetUrl2, suit2.mark, rank, id2);
+            }
+            
+            // 残りのペア（26ペア以上の場合、ハート・ダイヤを使用）
+            if (pairCount > 13) {
+                for (let rankIndex = 0; rankIndex < 13 && rankIndex < (pairCount - 13); rankIndex++) {
+                    const rank = ranks[rankIndex];
+                    
+                    // 1枚目（ハート）
+                    const suit3 = suits[2];
+                    const id3 = 2 * 13 + rankIndex; // ハートのID
+                    const targetUrl3 = `${BASE_URL}?id=${id3}`;
+                    createQRItem(grid, targetUrl3, suit3.mark, rank, id3);
+                    
+                    // 2枚目（ダイヤ）
+                    const suit4 = suits[3];
+                    const id4 = 3 * 13 + rankIndex; // ダイヤのID
+                    const targetUrl4 = `${BASE_URL}?id=${id4}`;
+                    createQRItem(grid, targetUrl4, suit4.mark, rank, id4);
+                }
+            }
+
+            document.querySelector('.input-section').classList.add('hidden');
+            document.getElementById('result-section').classList.remove('hidden');
+        }
+        
+        function createQRItem(grid, targetUrl, suitMark, rank, id) {
+            const item = document.createElement('div');
+            item.className = 'qr-item';
+            item.id = `qr-${id}`;
+            
+            const qrDiv = document.createElement('div');
+            new QRCode(qrDiv, {
+                text: targetUrl,
+                width: 150,
+                height: 150,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.M
+            });
+            
+            item.appendChild(qrDiv);
+            
+            const label = document.createElement('div');
+            label.className = 'qr-label';
+            label.textContent = `${suitMark} ${rank}`;
+            item.appendChild(label);
+            
+            const subLabel = document.createElement('div');
+            subLabel.className = 'qr-sub-label';
+            subLabel.textContent = `ID: ${id}`;
+            item.appendChild(subLabel);
+            
+            grid.appendChild(item);
+        }
+
+        function resetGenerator() {
+            document.querySelector('.input-section').classList.remove('hidden');
+            document.getElementById('result-section').classList.add('hidden');
+            document.getElementById('qr-grid').innerHTML = '';
+        }
+
+        // ページ読み込み時にカード構成を表示
+        window.onload = () => {
+            updateCardDistribution();
+        };
+    </script>
+</body>
+</html>
