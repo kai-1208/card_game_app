@@ -76,8 +76,8 @@ function playVoice() {
     }
     else if (flippedCount === 2) {
         const [id1, id2] = gameState.flippedCards;
-        const card1 = deck[id1];
-        const card2 = deck[id2];
+        const card1 = deck.find(c => c.id === id1);
+        const card2 = deck.find(c => c.id === id2);
         const isMatch = (card1.rank === card2.rank);
         
         if (isMatch) {
