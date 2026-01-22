@@ -33,6 +33,8 @@ function playTitleAnimation() {
 // 音声再生ロジック
 
 let lastPlayedVoice = null; // 最後に再生した音声を記録
+let currentAudio = null; // 現在再生中の音声オブジェクト
+let isAudioPlaying = false; // 音声再生中フラグ
 
 // 音声ファイルのパス配列
 const VOICE_FILES = [
@@ -101,10 +103,37 @@ function playVoice() {
 }
 
 function playSpecificVoice(voiceNumber) {
-    const audio = new Audio(VOICE_FILES[voiceNumber - 1]);
-    audio.play().catch(err => {
-        console.error('音声再生エラー:', err);
+    // 前の音声を停止
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+    }
+    
+    // 新しい音声を作成・再生
+    currentAudio = new Audio(VOICE_FILES[voiceNumber - 1]);
+    
+    // 音声読み込み完了時の処理
+    currentAudio.addEventListener('loadeddata', () => {
+        isAudioPlaying = true;
     });
+    
+    // 音声再生完了時の処理
+    currentAudio.addEventListener('ended', () => {
+        isAudioPlaying = false;
+    });
+    
+    // エラー処理
+    currentAudio.addEventListener('error', (err) => {
+        console.error('音声再生エラー:', err);
+        isAudioPlaying = false;
+    });
+    
+    // 再生開始
+    currentAudio.play().catch(err => {
+        console.error('音声再生エラー:', err);
+        isAudioPlaying = false;
+    });
+    
     lastPlayedVoice = voiceNumber;
 }
 
