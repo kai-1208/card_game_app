@@ -48,6 +48,7 @@ const VOICE_FILES = [
 
 function playVoice() {
     const foundCount = gameState.foundPairs.length;
+    const flippedCount = gameState.flippedCards.length;
     
     // 52枚目（全クリア）の場合
     if (foundCount === 52) {
@@ -62,10 +63,31 @@ function playVoice() {
     }
     
     let availableVoices;
-    if (foundCount > 26) {
-        availableVoices = [1, 2, 3, 5, 6, 7]; // voice_2を含む
-    } else {
-        availableVoices = [1, 3, 5, 6, 7]; // voice_2を除外
+    
+    // 1枚目を引いた時
+    if (flippedCount === 1) {
+        if (foundCount > 26) {
+            availableVoices = [1, 2, 3, 5, 7]; // voice_2を含む
+        } else {
+            availableVoices = [1, 3, 5, 7];
+        }
+    }
+    // 2枚目を引いた時
+    else if (flippedCount === 2) {
+        const [id1, id2] = gameState.flippedCards;
+        const card1 = deck[id1];
+        const card2 = deck[id2];
+        const isMatch = (card1.rank === card2.rank);
+        
+        if (isMatch) {
+            availableVoices = [3, 6];
+        } else {
+            if (foundCount > 26) {
+                availableVoices = [1, 2, 5, 7]; // voice_2を含む
+            } else {
+                availableVoices = [1, 5, 7];
+            }
+        }
     }
     
     let candidates = availableVoices.filter(v => v !== lastPlayedVoice);
