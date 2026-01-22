@@ -272,8 +272,10 @@ function initGame() {
     
     // ペアごとにカードを生成
     for (let rankIndex = 0; rankIndex < 13 && rankIndex < pairCount; rankIndex++) {
-        // スペード
+        // スペード（ID: 0-12）
+        const spadeId = 0 * 13 + rankIndex;
         deck.push({
+            id: spadeId,
             suit: suits[0].mark,
             rank: ranks[rankIndex],
             color: suits[0].color,
@@ -281,8 +283,10 @@ function initGame() {
             displayName: `${suits[0].mark} ${ranks[rankIndex]}`
         });
         
-        // クラブ
+        // クラブ（ID: 13-25）
+        const clubId = 1 * 13 + rankIndex;
         deck.push({
+            id: clubId,
             suit: suits[1].mark,
             rank: ranks[rankIndex],
             color: suits[1].color,
@@ -294,8 +298,10 @@ function initGame() {
     // 26ペア以上の場合
     if (pairCount > 13) {
         for (let rankIndex = 0; rankIndex < 13 && rankIndex < (pairCount - 13); rankIndex++) {
-            // ハート
+            // ハート（ID: 26-38）
+            const heartId = 2 * 13 + rankIndex;
             deck.push({
+                id: heartId,
                 suit: suits[2].mark,
                 rank: ranks[rankIndex],
                 color: suits[2].color,
@@ -303,8 +309,10 @@ function initGame() {
                 displayName: `${suits[2].mark} ${ranks[rankIndex]}`
             });
             
-            // ダイヤ
+            // ダイヤ（ID: 39-51）
+            const diamondId = 3 * 13 + rankIndex;
             deck.push({
+                id: diamondId,
                 suit: suits[3].mark,
                 rank: ranks[rankIndex],
                 color: suits[3].color,
@@ -313,21 +321,6 @@ function initGame() {
             });
         }
     }
-    
-    // デッキを正しい順序に並び替え（ID順）
-    const orderedDeck = [];
-    for (let suitIndex = 0; suitIndex < 4; suitIndex++) {
-        for (let rankIndex = 0; rankIndex < 13; rankIndex++) {
-            const card = deck.find(c => 
-                c.suitName === suits[suitIndex].name && 
-                c.rank === ranks[rankIndex]
-            );
-            if (card) {
-                orderedDeck.push(card);
-            }
-        }
-    }
-    deck = orderedDeck.slice(0, totalCards);
 
     loadState();
     renderGrid();
@@ -400,14 +393,17 @@ function onScanSuccess(decodedText, decodedResult) {
     }
 }
 
-function handleScan(index) {
-    if (index < 0 || index >= deck.length) {
-        showMessage("無効なカードIDです");
+function handleScan(scannedId) {
+    // デッキ内に該当するIDのカードがあるか確認
+    const cardIndex = deck.findIndex(card => card.id === scannedId);
+    
+    if (cardIndex === -1) {
+        showMessage("このカードは今回のゲームでは使用しません");
         return;
     }
     
-    if (gameState.foundPairs.includes(index)) {
-        showMessage(`【${deck[index].displayName}】\n獲得済みです`);
+    if (gameState.foundPairs.includes(scannedId)) {
+        showMessage(`【${deck[cardIndex].displayName}】\n獲得済みです`);
         return;
     }
 
@@ -416,23 +412,23 @@ function handleScan(index) {
         renderGrid();
     }
 
-    if (gameState.flippedCards.includes(index)) {
-        showMessage(`【${deck[index].displayName}】\n既にめくっています`);
+    if (gameState.flippedCards.includes(scannedId)) {
+        showMessage(`【${deck[cardIndex].displayName}】\n既にめくっています`);
         return;
     }
 
-    gameState.flippedCards.push(index);
+    gameState.flippedCards.push(scannedId);
     saveState();
     renderGrid();
 
-    const card = deck[index];
+    const card = deck[cardIndex];
     let resultMessage = `出たカード: ${card.displayName}`;
     let isPairCheckNeeded = false;
 
     if (gameState.flippedCards.length === 2) {
         const [id1, id2] = gameState.flippedCards;
-        const card1 = deck[id1];
-        const card2 = deck[id2];
+        const card1 = deck.find(c => c.id === id1);
+        const card2 = deck.find(c => c.id === id2);
         if (card1.rank === card2.rank) {
             resultMessage = `🎉 ペア成立！\n${card1.displayName} と ${card2.displayName}`;
         } else {
@@ -467,8 +463,8 @@ function handleScan(index) {
 
 function checkMatch(suppressMessage = false) {
     const [id1, id2] = gameState.flippedCards;
-    const card1 = deck[id1];
-    const card2 = deck[id2];
+    const card1 = deck.find(c => c.id === id1);
+    const card2 = deck.find(c => c.id === id2);
     const isMatch = (card1.rank === card2.rank);
 
     if (isMatch) {
