@@ -1,6 +1,4 @@
-/* =========================================
-   UI/画面遷移ロジック
-   ========================================= */
+// UI/画面遷移ロジック
 
 // タイトル演出アニメーション
 function playTitleAnimation() {
@@ -30,6 +28,62 @@ function playTitleAnimation() {
     setTimeout(() => {
         startMsg.classList.add('visible');
     }, 2500);
+}
+
+// 音声再生ロジック
+
+let lastPlayedVoice = null; // 最後に再生した音声を記録
+
+// 音声ファイルのパス配列
+const VOICE_FILES = [
+    'sounds/voice_1.wav', // 頑張って
+    'sounds/voice_2.wav', // もう少し (26枚後のみ)
+    'sounds/voice_3.wav', // いい調子
+    'sounds/voice_4.wav', // お疲れ様 (52枚目のみ)
+    'sounds/voice_5.wav', // 焦らないで
+    'sounds/voice_6.wav', // 完璧だね
+    'sounds/voice_7.wav', // 落ち着いて
+    'sounds/voice_8.wav'  // 半分だよ (26枚目のみ)
+];
+
+function playVoice() {
+    const foundCount = gameState.foundPairs.length;
+    
+    // 52枚目（全クリア）の場合
+    if (foundCount === 52) {
+        playSpecificVoice(4);
+        return;
+    }
+    
+    // 26枚目（半分）の場合
+    if (foundCount === 26) {
+        playSpecificVoice(8);
+        return;
+    }
+    
+    let availableVoices;
+    if (foundCount > 26) {
+        availableVoices = [1, 2, 3, 5, 6, 7]; // voice_2を含む
+    } else {
+        availableVoices = [1, 3, 5, 6, 7]; // voice_2を除外
+    }
+    
+    let candidates = availableVoices.filter(v => v !== lastPlayedVoice);
+    
+    if (candidates.length === 0) {
+        candidates = availableVoices;
+    }
+    
+    const selectedVoice = candidates[Math.floor(Math.random() * candidates.length)];
+    playSpecificVoice(selectedVoice);
+}
+
+function playSpecificVoice(voiceNumber) {
+    const audio = new Audio(VOICE_FILES[voiceNumber - 1]);
+    audio.play().catch(err => {
+        console.error('音声再生エラー:', err);
+    });
+    lastPlayedVoice = voiceNumber;
 }
 
 // タイトル -> メニュー
@@ -292,6 +346,9 @@ function handleScan(index) {
     } else {
         showMessage(resultMessage);
     }
+
+    // 音声再生
+    playVoice();
     
     if (isPairCheckNeeded) {
         setTimeout(() => checkMatch(isMissionTriggered), 500);
