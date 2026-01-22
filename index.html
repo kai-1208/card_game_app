@@ -13,15 +13,17 @@
     <!-- 背景画像 -->
     <div class="background" id="bg-img"></div>
 
+    <div id="flash-effect"></div>
+
     <div class="container">
         
         <!-- シーン1：タイトル画面 -->
         <div id="title-screen" onclick="showMenu()">
             <div class="title-area">
-                <span class="title-small">体を動かして読み取れ！</span>
-                <span class="title-ruby">しんけいすいじゃく</span>
-                <h1 class="title-large" id="main-title">神経衰弱</h1>
-                <p class="tap-to-start" id="start-msg">クリックしてスタート</p>
+                <span class="title-small anim-item" id="title-line-1">体を動かして読み取れ！</span>
+                <span class="title-ruby anim-item" id="title-ruby">しんけいすいじゃく</span>
+                <h1 class="title-large anim-item" id="title-line-2">神経衰弱</h1>
+                <p class="tap-to-start" id="start-msg">クリックしてメニュー画面へ</p>
             </div>
         </div>
 
@@ -53,7 +55,7 @@
                     <button id="close-scan-btn" class="btn-game close-btn" style="display:none;">カメラを閉じる</button>
                 </div>
 
-                <p id="status-text">「スキャン」ボタンでQRコードを読み取ろう！</p>
+                <p id="status-text">「スキャン」ボタンでQRコードを読み取ろう!</p>
 
                 <!-- カード一覧 -->
                 <div id="card-grid" class="grid"></div>

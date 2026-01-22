@@ -1,6 +1,5 @@
 body, html {
     margin: 0; padding: 0; width: 100%; height: 100%;
-    /* スクロールが必要な場合に備えて hidden を auto に変更 */
     overflow-y: auto; 
     background-color: #2d6b45;
     font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
@@ -13,7 +12,7 @@ body, html {
     background-size: cover; z-index: 1;
     transition: filter 0.5s ease;
 }
-.bg-dimmed { filter: brightness(0.4); } /* ゲーム中などは少し暗めに */
+.bg-dimmed { filter: brightness(0.4); }
 
 .container {
     position: relative; z-index: 2; width: 100%; min-height: 100%;
@@ -22,17 +21,48 @@ body, html {
 
 .hidden { display: none !important; }
 
+/* フラッシュ効果用レイヤー */
+#flash-effect {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: white; z-index: 9999;
+    pointer-events: none; opacity: 0;
+}
+.do-flash { animation: flash-white 0.4s ease-out; }
+
+@keyframes flash-white {
+    0% { opacity: 0; }
+    50% { opacity: 0.8; }
+    100% { opacity: 0; }
+}
+
 /* タイトル画面 */
 #title-screen {
     width: 100%; height: 100vh; cursor: pointer;
     display: flex; flex-direction: column; justify-content: flex-end;
     align-items: center; padding-bottom: 80px; box-sizing: border-box;
 }
-.title-area { text-align: center; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+.title-area { 
+    text-align: center; color: white; 
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    /* 体を動かすイメージの揺れアニメーション */
+    animation: body-move 3s ease-in-out infinite;
+}
+
+@keyframes body-move {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-5px) rotate(1deg); }
+    75% { transform: translateY(-3px) rotate(-1deg); }
+}
+
+/* 段階表示用の初期状態 */
+.anim-item { opacity: 0; transition: opacity 0.5s ease; }
+.anim-item.visible { opacity: 1; }
+
 .title-small { display: block; font-size: 1.4rem; margin-bottom: 5px; }
-.title-ruby { display: block; font-size: 0.9rem; letter-spacing: 0.2rem; }
+.title-ruby { display: block; font-size: 0.9rem; letter-spacing: 0.2rem; margin-top: 10px; }
 .title-large { font-size: 4rem; margin: 0; font-weight: bold; }
-.tap-to-start { margin-top: 40px; font-size: 1.2rem; animation: flash 1.5s infinite; }
+.tap-to-start { margin-top: 40px; font-size: 1.2rem; animation: flash 1.5s infinite; opacity: 0; }
+.tap-to-start.visible { opacity: 1; }
 
 /* メニュー画面 */
 #menu-screen {
@@ -42,7 +72,6 @@ body, html {
 }
 .menu-buttons { display: flex; flex-direction: column; gap: 20px; width: 80%; max-width: 320px; }
 
-/* メインメニューのボタン */
 .btn {
     border: none; padding: 18px; border-radius: 40px;
     font-size: 1.3rem; font-weight: bold; cursor: pointer;
@@ -67,46 +96,34 @@ body, html {
 .modal-content h2 { margin-top: 0; color: #2d6b45; }
 .btn-close { margin-top: 20px; padding: 10px 30px; border-radius: 20px; border: none; background: #333; color: white; cursor: pointer; }
 
-/* --- ▼▼▼ ここからゲーム画面用の追加スタイル ▼▼▼ --- */
-
-#game-screen {
-    width: 100%;
-    padding-bottom: 50px;
-}
-
+/* ゲーム画面スタイル */
+#game-screen { width: 100%; padding-bottom: 50px; }
 .game-header {
-    background-color: rgba(45, 107, 69, 0.9); /* ベース色を透過 */
+    background-color: rgba(45, 107, 69, 0.9);
     padding: 15px;
     position: sticky; top: 0; z-index: 90;
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
-
 .control-box { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
-
-/* ゲーム内ボタン（小さめデザイン） */
 .btn-game {
-    border: none; padding: 8px 12px; border-radius: 20px; /* 丸みを統一 */
+    border: none; padding: 8px 12px; border-radius: 20px;
     cursor: pointer; font-weight: bold; font-size: 0.85rem;
     box-shadow: 0 2px 0 rgba(0,0,0,0.2);
 }
 .btn-game:active { transform: translateY(2px); box-shadow: none; }
-
-.scan-btn { background: #f6cd56; color: #333; } /* スタートボタンと同色 */
+.scan-btn { background: #f6cd56; color: #333; }
 .toggle-btn { background: #6a8dbd; color: white; }
 .reset-btn { background: #e6e9e6; color: #333; }
 .back-btn { background: #333; color: white; }
 .close-btn { background: #d9534f; color: white; margin-top: 10px; }
 
-/* カメラエリア */
 #reader-container { margin: 15px auto; max-width: 90%; width: 400px; display: none; }
 #reader { width: 100%; background: black; border-radius: 15px; overflow: hidden; border: 4px solid #fff; }
-
 #status-text {
     font-size: 1rem; font-weight: bold; color: white; text-shadow: 1px 1px 2px black;
     margin: 10px; min-height: 1.5em; text-align: center;
 }
 
-/* カードグリッド */
 .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
@@ -115,7 +132,7 @@ body, html {
 
 .card {
     aspect-ratio: 2 / 3;
-    background-color: #222; /* 裏面 */
+    background-color: #222;
     border-radius: 6px;
     display: flex; align-items: center; justify-content: center;
     font-size: 1.2rem; color: transparent;
@@ -123,22 +140,12 @@ body, html {
     box-shadow: 0 2px 5px rgba(0,0,0,0.3);
     transition: transform 0.3s;
 }
-
-.card.open {
-    background-color: white;
-    border: 2px solid #ccc;
-    transform: rotateY(0deg);
-}
-.card.matched {
-    background-color: #d4edda; border-color: #28a745; opacity: 0.8;
-}
+.card.open { background-color: white; border: 2px solid #ccc; transform: rotateY(0deg); }
+.card.matched { background-color: #d4edda; border-color: #28a745; opacity: 0.8; }
 .red { color: #d00; }
 .black { color: #000; }
-.card:not(.open)::after {
-    content: "♠"; color: rgba(255,255,255,0.2); font-size: 1.5rem;
-}
+.card:not(.open)::after { content: "♠"; color: rgba(255,255,255,0.2); font-size: 1.5rem; }
 
-/* ゲーム内ダイアログ */
 .dialog-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.3);
@@ -153,6 +160,5 @@ body, html {
     max-width: 80%; white-space: pre-wrap; pointer-events: auto; 
 }
 
-/* アニメーション */
 @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }

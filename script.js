@@ -2,6 +2,36 @@
    UI/画面遷移ロジック
    ========================================= */
 
+// タイトル演出アニメーション
+function playTitleAnimation() {
+    const flash = document.getElementById('flash-effect');
+    const line1 = document.getElementById('title-line-1');
+    const line2 = document.getElementById('title-line-2');
+    const ruby = document.getElementById('title-ruby');
+    const startMsg = document.getElementById('start-msg');
+
+    // 1. 最初のフラッシュと一行目表示
+    setTimeout(() => {
+        flash.classList.add('do-flash');
+        line1.classList.add('visible');
+    }, 500);
+
+    // 2. 二回目のフラッシュとふりがな・二行目表示
+    setTimeout(() => {
+        flash.classList.remove('do-flash');
+        void flash.offsetWidth; // アニメーションを再起動させるためのハック
+        flash.classList.add('do-flash');
+        
+        ruby.classList.add('visible');
+        line2.classList.add('visible');
+    }, 1500);
+
+    // 3. スタートメッセージ表示
+    setTimeout(() => {
+        startMsg.classList.add('visible');
+    }, 2500);
+}
+
 // タイトル -> メニュー
 function showMenu() {
     document.getElementById('bg-img').classList.add('bg-dimmed');
@@ -29,10 +59,13 @@ function backToTitle() {
 }
 
 // モーダル制御
-function openModal(type) {
+function openModal(type, content = null) {
     const modal = document.getElementById('info-modal');
     const title = document.getElementById('modal-title');
     const body = document.getElementById('modal-body');
+
+    title.innerText = "情報";
+    body.innerHTML = "";
 
     if (type === 'rules') {
         title.innerText = "ルール説明";
@@ -40,6 +73,27 @@ function openModal(type) {
     } else if (type === 'settings') {
         title.innerText = "設定";
         body.innerHTML = "<p>BGM: ON<br>難易度: ノーマル<br>（現在変更できません）</p>";
+    } else if (type === 'mission_with_result') {
+        title.innerText = "⚡ イベント発生 ⚡";
+        
+        const resultHtml = `
+            <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px dashed #ccc;">
+                <p style="font-size: 1.1rem; color: #333; margin-bottom: 5px;">▼ カードの結果 ▼</p>
+                <p style="font-size: 1.5rem; font-weight: bold; color: #000; line-height: 1.4;">
+                    ${content.result.replace(/\n/g, '<br>')}
+                </p>
+            </div>
+        `;
+
+        const missionHtml = `
+            <div>
+                <p style="font-size: 1.1rem; color: #d00; font-weight: bold; margin-bottom: 5px;">⚠️ 指令発生！ ⚠️</p>
+                <p style="font-size: 1.2rem; font-weight: bold; color: #d00; line-height: 1.4;">
+                    ${content.mission}
+                </p>
+            </div>
+        `;
+        body.innerHTML = resultHtml + missionHtml;
     }
     modal.classList.remove('hidden');
 }
@@ -47,7 +101,6 @@ function openModal(type) {
 function closeModal() {
     document.getElementById('info-modal').classList.add('hidden');
 }
-
 
 /* =========================================
    神経衰弱 ゲームロジック
@@ -61,6 +114,17 @@ const suits = [
 ];
 const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
+const MOVEMENT_MISSIONS = [
+    "次のカードをスキャンするまで、\n3歩あるく度にスクワットを一回せよ！",
+    "次のカードをスキャンするまで、\n太ももを地面と平行になるぐらい上げて歩け！",
+    "次のカードをスキャンするまで、\nスキップで移動せよ！",
+    "次のカードをスキャンするまで、\nカニ歩き（横歩き）で移動せよ！",
+    "次のカードをスキャンするまで、\n両手を挙げて「バンザイ」の姿勢で移動せよ！",
+    "次のカードをスキャンするまで、\n後ろ歩き（気をつけて！）で移動せよ！",
+    "次のカードをスキャンするまで、\n常に笑顔をキープして移動せよ！",
+    "その場で10回ジャンプしてから、\n次のカードを探しに行け！"
+];
+
 let deck = [];
 let gameState = {
     foundPairs: [],
@@ -71,9 +135,7 @@ let html5QrCode;
 let isMessageEnabled = true;
 let isScanning = false;
 
-// ゲーム初期化
 function initGame() {
-    // デッキ生成
     deck = [];
     let idCounter = 0;
     suits.forEach(suit => {
@@ -90,18 +152,15 @@ function initGame() {
 
     loadState();
     
-    // メッセージ設定の復元
     const savedSetting = localStorage.getItem('msgSetting');
     if (savedSetting !== null) {
         isMessageEnabled = (savedSetting === 'true');
     }
     updateToggleButton();
 
-    // QRパラメータ判定（直リンクの場合）
     const urlParams = new URLSearchParams(window.location.search);
     const scannedId = urlParams.get('id');
     if (scannedId !== null) {
-        // QRから直接飛んできた場合はゲーム画面を即表示
         showMenu(); 
         startGame();
         handleScan(parseInt(scannedId));
@@ -111,7 +170,6 @@ function initGame() {
     renderGrid();
 }
 
-// ダイアログ
 function showMessage(text) {
     if (!isMessageEnabled) return;
     const overlay = document.getElementById('custom-dialog');
@@ -121,7 +179,6 @@ function showMessage(text) {
     setTimeout(() => { overlay.classList.remove('show'); }, 2500);
 }
 
-// スキャナー処理
 document.getElementById('scan-btn').addEventListener('click', startScanner);
 document.getElementById('close-scan-btn').addEventListener('click', stopScanner);
 
@@ -130,7 +187,6 @@ function startScanner() {
     container.style.display = 'block';
     document.getElementById('close-scan-btn').style.display = 'inline-block';
 
-    // インスタンスがなければ作成、あれば既存を使用
     if (!html5QrCode) {
         html5QrCode = new Html5Qrcode("reader");
     }
@@ -142,7 +198,6 @@ function startScanner() {
         isScanning = true;
     })
     .catch(err => {
-        // 起動失敗時はUIを隠すなどの処理
         container.style.display = 'none';
         showMessage("カメラ起動エラー: " + err);
     });
@@ -150,14 +205,13 @@ function startScanner() {
 
 function stopScanner() {
     document.getElementById('reader-container').style.display = 'none';
-    
     if (html5QrCode && isScanning) {
         html5QrCode.stop().then(() => {
-            isScanning = false; // フラグをOFF
+            isScanning = false; 
             html5QrCode.clear();
         }).catch(err => {
             console.error("停止エラー:", err);
-            isScanning = false; // エラーでも一応OFFにしておく
+            isScanning = false; 
         });
     }
 }
@@ -182,7 +236,6 @@ function onScanSuccess(decodedText, decodedResult) {
     }
 }
 
-// ゲーム進行
 function handleScan(index) {
     if (index < 0 || index >= deck.length) {
         showMessage("無効なカードIDです");
@@ -194,7 +247,6 @@ function handleScan(index) {
         return;
     }
 
-    // 前のターンのハズレをリセット
     if (gameState.flippedCards.length === 2) {
         gameState.flippedCards = [];
         renderGrid();
@@ -210,28 +262,58 @@ function handleScan(index) {
     renderGrid();
 
     const card = deck[index];
-    document.getElementById('status-text').textContent = `出たカード: ${card.displayName}`;
-    
+    let resultMessage = `出たカード: ${card.displayName}`;
+    let isPairCheckNeeded = false;
+
     if (gameState.flippedCards.length === 2) {
-        setTimeout(checkMatch, 500);
+        const [id1, id2] = gameState.flippedCards;
+        const card1 = deck[id1];
+        const card2 = deck[id2];
+        if (card1.rank === card2.rank) {
+            resultMessage = `🎉 ペア成立！\n${card1.displayName} と ${card2.displayName}`;
+        } else {
+            resultMessage = `😢 残念、ハズレ！\n${card1.displayName} と ${card2.displayName}`;
+        }
+        isPairCheckNeeded = true;
     } else {
-        showMessage(`1枚目: ${card.displayName}\n次のカードを探してください！`);
+        resultMessage = `1枚目: ${card.displayName}\n次のカードを探そう！`;
+    }
+
+    document.getElementById('status-text').textContent = `出たカード: ${card.displayName}`;
+
+    const isMissionTriggered = Math.random() < 0.35; 
+
+    if (isMissionTriggered) {
+        const randomMission = MOVEMENT_MISSIONS[Math.floor(Math.random() * MOVEMENT_MISSIONS.length)];
+        openModal('mission_with_result', {
+            result: resultMessage,
+            mission: randomMission
+        });
+    } else {
+        showMessage(resultMessage);
+    }
+    
+    if (isPairCheckNeeded) {
+        setTimeout(() => checkMatch(isMissionTriggered), 500);
     }
 }
 
-function checkMatch() {
+function checkMatch(suppressMessage = false) {
     const [id1, id2] = gameState.flippedCards;
     const card1 = deck[id1];
     const card2 = deck[id2];
-
     const isMatch = (card1.rank === card2.rank);
 
     if (isMatch) {
         gameState.foundPairs.push(id1, id2);
         gameState.flippedCards = []; 
-        showMessage(`🎉 ペア成立！\n${card1.displayName} と ${card2.displayName}`);
+        if (!suppressMessage) {
+            showMessage(`🎉 ペア成立！\n${card1.displayName} と ${card2.displayName}`);
+        }
     } else {
-        showMessage(`😢 残念、ハズレ！\n${card1.displayName} と ${card2.displayName}`);
+        if (!suppressMessage) {
+            showMessage(`😢 残念、ハズレ！\n${card1.displayName} と ${card2.displayName}`);
+        }
     }
     saveState();
     renderGrid();
@@ -240,32 +322,28 @@ function checkMatch() {
 function renderGrid() {
     const grid = document.getElementById('card-grid');
     grid.innerHTML = '';
-
     deck.forEach(card => {
         const div = document.createElement('div');
         div.className = 'card';
-        
         const isOpen = gameState.foundPairs.includes(card.id) || gameState.flippedCards.includes(card.id);
         const isMatched = gameState.foundPairs.includes(card.id);
-
         if (isOpen) {
-            div.classList.add('open');
-            div.classList.add(card.color);
+            div.classList.add('open', card.color);
             div.textContent = card.displayName;
         }
-        if (isMatched) {
-            div.classList.add('matched');
-        }
+        if (isMatched) div.classList.add('matched');
         grid.appendChild(div);
     });
 
     if (gameState.foundPairs.length === deck.length && deck.length > 0) {
         document.getElementById('status-text').textContent = "🎊 全制覇！おめでとう！ 🎊";
-        showMessage("🎊 全制覇！おめでとうございます！ 🎊");
+        openModal('mission_with_result', {
+            result: "🎊 全制覇！おめでとう！ 🎊",
+            mission: "最後の指令：<br>深呼吸して、自分に拍手！👏"
+        });
     }
 }
 
-// ユーティリティ
 const toggleBtn = document.getElementById('toggle-msg-btn');
 toggleBtn.addEventListener('click', () => {
     isMessageEnabled = !isMessageEnabled;
@@ -293,10 +371,11 @@ function saveState() {
 
 function loadState() {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-        gameState = JSON.parse(saved);
-    }
+    if (saved) gameState = JSON.parse(saved);
 }
 
-// ページ読み込み時はinitGameだけしておく（画面はタイトル）
-window.onload = initGame;
+// ページ読み込み時の処理
+window.onload = () => {
+    initGame();
+    playTitleAnimation(); // アニメーション開始
+};
