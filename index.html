@@ -31,14 +31,50 @@
         <div id="menu-screen" class="hidden">
             <div class="menu-buttons">
                 <!-- onclickを直接 startGame() に変更しています -->
-                <button class="btn btn-start" onclick="startGame()">ゲーム開始</button>
+                <button class="btn btn-start" onclick="showCardCountSelection()">ゲーム開始</button>
                 <button class="btn btn-rules" onclick="openModal('rules')">ルール説明</button>
                 <button class="btn btn-settings" onclick="openModal('settings')">設定</button>
                 <button class="btn btn-qr" onclick="location.href='qr_generator.html'">QRコード生成</button>
             </div>
         </div>
 
-        <!-- シーン3：ゲーム画面（統合部分） -->
+        <!-- シーン3：カード枚数選択画面 -->
+        <div id="card-count-screen" class="hidden">
+            <div class="card-count-selection">
+                <h2>使用するカード枚数を選択</h2>
+                <p style="color: #fff; margin-bottom: 20px;">生成したQRコードの枚数と同じ数を選んでください</p>
+                <select id="game-card-count" class="card-count-select">
+                    <option value="10">10枚（5ペア）</option>
+                    <option value="12">12枚（6ペア）</option>
+                    <option value="14">14枚（7ペア）</option>
+                    <option value="16">16枚（8ペア）</option>
+                    <option value="18">18枚（9ペア）</option>
+                    <option value="20">20枚（10ペア）</option>
+                    <option value="22">22枚（11ペア）</option>
+                    <option value="24">24枚（12ペア）</option>
+                    <option value="26">26枚（13ペア）</option>
+                    <option value="28">28枚（14ペア）</option>
+                    <option value="30">30枚（15ペア）</option>
+                    <option value="32">32枚（16ペア）</option>
+                    <option value="34">34枚（17ペア）</option>
+                    <option value="36">36枚（18ペア）</option>
+                    <option value="38">38枚（19ペア）</option>
+                    <option value="40">40枚（20ペア）</option>
+                    <option value="42">42枚（21ペア）</option>
+                    <option value="44">44枚（22ペア）</option>
+                    <option value="46">46枚（23ペア）</option>
+                    <option value="48">48枚（24ペア）</option>
+                    <option value="50">50枚（25ペア）</option>
+                    <option value="52" selected>52枚（26ペア）</option>
+                </select>
+                <div style="margin-top: 30px;">
+                    <button class="btn btn-start" onclick="startGameWithCount()">この枚数で開始</button>
+                    <button class="btn btn-secondary" onclick="backToMenu()">メニューに戻る</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- シーン4：ゲーム画面（統合部分） -->
         <div id="game-screen" class="hidden">
             <header class="game-header">
                 <div class="control-box">

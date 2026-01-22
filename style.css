@@ -83,6 +83,46 @@ body, html {
 .btn-settings { background-color: #e6e9e6; color: #333; }
 .btn-qr { background-color: #9b59b6; color: white; }
 
+/* カード枚数選択画面 */
+#card-count-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    animation: fadeIn 0.5s ease;
+}
+
+.card-count-selection {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 40px;
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+}
+
+.card-count-selection h2 {
+    color: #f6cd56;
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.card-count-select {
+    width: 280px;
+    padding: 15px;
+    font-size: 1.2rem;
+    border: 3px solid #f6cd56;
+    border-radius: 10px;
+    background: white;
+    cursor: pointer;
+    font-weight: bold;
+    color: #333;
+}
+
+.card-count-select:focus {
+    outline: none;
+    border-color: #2d6b45;
+}
+
 /* モーダル */
 .modal {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
