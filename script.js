@@ -161,12 +161,34 @@ function showCardCountSelection() {
 
 // カード枚数選択 -> メニュー
 function backToMenu() {
+    // ゲーム状態をリセット
+    resetGameState();
+    
     document.getElementById('card-count-screen').classList.add('hidden');
     document.getElementById('menu-screen').classList.remove('hidden');
 }
 
+// ゲーム状態リセット関数
+function resetGameState() {
+    gameState = {
+        foundPairs: [],
+        flippedCards: []
+    };
+    localStorage.removeItem(STORAGE_KEY);
+    deck = [];
+    
+    // ステータステキストもリセット
+    const statusText = document.getElementById('status-text');
+    if (statusText) {
+        statusText.textContent = "QRコードをスキャンしよう！";
+    }
+}
+
 // カード枚数選択 -> ゲーム画面
 function startGameWithCount() {
+    // 新しいゲームを始める前に状態をリセット
+    resetGameState();
+    
     totalCards = parseInt(document.getElementById('game-card-count').value);
     document.getElementById('card-count-screen').classList.add('hidden');
     document.getElementById('game-screen').classList.remove('hidden');
@@ -177,6 +199,9 @@ function startGameWithCount() {
 // ゲーム画面 -> タイトル（戻るボタン）
 function backToTitle() {
     if (confirm("ゲームを中断してタイトルに戻りますか？")) {
+        // ゲーム状態をリセット
+        resetGameState();
+        
         document.getElementById('game-screen').classList.add('hidden');
         document.getElementById('card-count-screen').classList.add('hidden');
         document.getElementById('menu-screen').classList.add('hidden');
@@ -325,6 +350,9 @@ function initGame() {
     loadState();
     renderGrid();
     updateToggleButton();
+    
+    // ステータステキストを初期化
+    document.getElementById('status-text').textContent = "QRコードをスキャンしよう！";
 }
 
 function showMessage(text) {
@@ -513,7 +541,10 @@ function renderGrid() {
         grid.appendChild(div);
     });
 
-    if (gameState.foundPairs.length === deck.length && deck.length > 0) {
+    // 全制覇判定：デッキが存在し、かつ全カードが獲得済みの場合のみ
+    const isAllCleared = deck.length > 0 && gameState.foundPairs.length === deck.length;
+    
+    if (isAllCleared) {
         document.getElementById('status-text').textContent = "🎊 全制覇！おめでとう！ 🎊";
         openModal('mission_with_result', {
             result: "🎊 全制覇！おめでとう！ 🎊",
@@ -536,9 +567,8 @@ function updateToggleButton() {
 
 document.getElementById('reset-btn').addEventListener('click', () => {
     if(confirm("リセットしますか？")) {
-        localStorage.removeItem(STORAGE_KEY);
-        gameState = { foundPairs: [], flippedCards: [] };
-        renderGrid();
+        resetGameState();
+        initGame();
         showMessage("リセットしました");
     }
 });
