@@ -224,7 +224,7 @@ function openModal(type, content = null) {
 
     if (type === 'rules') {
         title.innerText = "ルール説明";
-        body.innerHTML = "<p style='text-align:left;'>1. 部屋に設置したQRコードまで移動しよう。<br>2. 「スキャン」ボタンでQRを読み取る。<br>3. トランプが表示されるよ。<br>4. 同じ数字を見つけてペアを作ろう！</p>";
+        body.innerHTML = "<p style='text-align:left;'>準備. 「QRコード生成」から使用する枚数のQRコードを選択し印刷しよう。<br>QRコードを部屋に設置しよう。1. 部屋に設置したQRコードまで移動しよう。<br>2. 「スキャン」ボタンでQRを読み取る。<br>3. トランプが表示されるよ。<br>4. 同じ数字を見つけてペアを作ろう！</p>";
     } else if (type === 'settings') {
         title.innerText = "設定";
         body.innerHTML = "<p>BGM: ON<br>難易度: ノーマル<br>（現在変更できません）</p>";

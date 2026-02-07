@@ -18,7 +18,7 @@
     <div class="container">
         
         <!-- シーン1：タイトル画面 -->
-        <div id="title-screen" onclick="showMenu()">
+        <div id="title-screen" onclick="playBgm(); showMenu();">
             <div class="title-area">
                 <span class="title-small anim-item" id="title-line-1">体を動かして読み取れ！</span>
                 <span class="title-ruby anim-item" id="title-ruby">しんけいすいじゃく</span>
@@ -114,6 +114,10 @@
         </div>
 
     </div>
+
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    
+    <script src="bgm.js"></script>
 
     <script src="script.js"></script>
 </body>
